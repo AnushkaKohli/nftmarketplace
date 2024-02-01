@@ -57,14 +57,14 @@ contract NFTMarketplace is ERC721URIStorage {
 
         idToMarketItem[tokenId] = MarketItem(
             tokenId,
-            payable(msg.sender),
-            payable(address(this)),
+            payable(msg.sender), // seller
+            payable(address(this)), // owner
             price,
             false
         );
 
         // _transfer function comes from openzeppelin library (ERC721 contract)
-        _transfer(msg.sender, address(this), tokenId); // transfer the token to the marketplace
+        _transfer(msg.sender, address(this), tokenId); // transfer the token from msg.sender to the marketplace (this smart contract)
         emit MarketItemCreated(
             tokenId,
             msg.sender,
@@ -72,5 +72,48 @@ contract NFTMarketplace is ERC721URIStorage {
             price,
             false
         );
+    }
+
+    // Mint a token and list it in the marketplace
+    // tokenURI: metadata of the token (image URI)
+    function createToken(
+        string memory tokenURI,
+        uint price
+    ) public payable returns (uint) {
+        _tokenIds.increment();
+        uint256 newTokenId = _tokenIds.current();
+
+        // mint the token tokenId to msg.sender - _mint function comes from openzeppelin library (ERC721 contract)
+        // first the token is minted to the msg.sender and then it is transferred to the marketplace (this smart contract). That is how the token is listed in the marketplace
+        _mint(msg.sender, newTokenId);
+        _setTokenURI(newTokenId, tokenURI);
+
+        // list the token in the marketplace
+        createMarketItem(tokenId, price);
+        return newTokenId;
+    }
+
+    // Creating the sale of a token. Transferring ownership of the token as well as funds between parties
+    function createMarketSale(uint tokenId) public {
+        uint price = idToMarketItem[tokenId].price;
+        address seller = idToMarketItem[tokenId].seller;
+        require(
+            msg.value == price,
+            "Please submit the asking price of NFT in order to complete the purchase"
+        );
+
+        // update the owner of the token in the marketplace
+        idToMarketItem[tokenId].owner = payable(msg.sender);
+        // update the sold status of the token
+        idToMarketItem[tokenId].sold = true;
+        // update the seller of the token to address(0) - address(0) is the burn address ie noone is the seller as the token is sold
+        idToMarketItem[tokenId].seller = payable(address(0));
+        // increment the number of tokens sold
+        _tokenSold.increment();
+        // transfer the token from the contract address to the buyer (msg.sender)
+        _transfer(address(this), msg.sender, tokenId);
+        // transfer the listingPrice to the owner
+        payable(owner).transfer(listingPrice);
+        payable(seller).transfer(msg.value);
     }
 }
