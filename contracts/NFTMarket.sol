@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
-import "@openzeppelin/contracts/utils/Counters.sol";
+// import "@openzeppelin/contracts/utils/Counters.sol";
+import "./Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
@@ -89,12 +90,12 @@ contract NFTMarketplace is ERC721URIStorage {
         _setTokenURI(newTokenId, tokenURI);
 
         // list the token in the marketplace
-        createMarketItem(tokenId, price);
+        createMarketItem(newTokenId, price);
         return newTokenId;
     }
 
     // Creating the sale of a token. Transferring ownership of the token as well as funds between parties
-    function createMarketSale(uint tokenId) public {
+    function createMarketSale(uint tokenId) public payable {
         uint price = idToMarketItem[tokenId].price;
         address seller = idToMarketItem[tokenId].seller;
         require(
@@ -200,7 +201,7 @@ contract NFTMarketplace is ERC721URIStorage {
         idToMarketItem[tokenId].price = price;
         idToMarketItem[tokenId].seller = payable(msg.sender);
         idToMarketItem[tokenId].owner = payable(address(this));
-        _itemSold.decrement();
+        _tokenSold.decrement();
         _transfer(msg.sender, address(this), tokenId);
     }
 
@@ -219,7 +220,7 @@ contract NFTMarketplace is ERC721URIStorage {
         idToMarketItem[tokenId].seller = payable(address(0));
         // the item is sold to the user who is the owner of the token as he has already paid the listing price
         idToMarketItem[tokenId].sold = true;
-        _itemSold.increment();
+        _tokenSold.increment();
         // the listing price is refunded to the seller
         payable(msg.sender).transfer(listingPrice);
         _transfer(address(this), msg.sender, tokenId);

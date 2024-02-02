@@ -36,3 +36,7 @@ b) Add openzeppelin library which is a library of modular, reusable, secure smar
 
 Step 6:
 Modify *NFTMarket.sol*
+
+Step 7:
+Create the test file.
+Run test using `npx hardhat test`
