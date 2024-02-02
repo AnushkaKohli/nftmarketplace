@@ -185,4 +185,43 @@ contract NFTMarketplace is ERC721URIStorage {
         }
         return items;
     }
+
+    // Allows users to resell a purchased token
+    function resellToken(uint tokenId, uint price) public payable {
+        require(
+            idToMarketItem[tokenId].owner == msg.sender,
+            "You are not the owner of this token, so you cannot resell it"
+        );
+        require(
+            msg.value == listingPrice,
+            "Price must be equal to listing price"
+        );
+        idToMarketItem[tokenId].sold = false;
+        idToMarketItem[tokenId].price = price;
+        idToMarketItem[tokenId].seller = payable(msg.sender);
+        idToMarketItem[tokenId].owner = payable(address(this));
+        _itemSold.decrement();
+        _transfer(msg.sender, address(this), tokenId);
+    }
+
+    // Allows users to cancel a sale
+    function cancelItemListing(uint tokenId) public {
+        require(
+            idToMarketItem[tokenId].seller == msg.sender,
+            "You are not the seller of this token, so you cannot cancel the sale"
+        );
+        require(
+            idToMarketItem[tokenId].sold == false,
+            "Only cancel unsold items"
+        );
+        idToMarketItem[tokenId].owner = payable(msg.sender);
+        // No one will be the seller - address(0) is the burn address
+        idToMarketItem[tokenId].seller = payable(address(0));
+        // the item is sold to the user who is the owner of the token as he has already paid the listing price
+        idToMarketItem[tokenId].sold = true;
+        _itemSold.increment();
+        // the listing price is refunded to the seller
+        payable(msg.sender).transfer(listingPrice);
+        _transfer(address(this), msg.sender, tokenId);
+    }
 }
