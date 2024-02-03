@@ -122,13 +122,13 @@ contract NFTMarketplace is ERC721URIStorage {
     function fetchMarketItems() public view returns (MarketItem[] memory) {
         uint itemCount = _tokenIds.current();
         uint unsoldItemCount = _tokenIds.current() - _tokenSold.current();
+        // current index of the unsold items (from 0 to unsoldItemCount - 1)
         uint currentIndex = 0;
 
         MarketItem[] memory items = new MarketItem[](unsoldItemCount);
         for (uint i = 0; i < itemCount; i++) {
             // if the item has not been sold, the owner of the item is the marketplace contract address
             if (idToMarketItem[i + 1].owner == address(this)) {
-                // uint currentId = i + 1;
                 uint currentId = idToMarketItem[i + 1].tokenId;
                 MarketItem storage currentItem = idToMarketItem[currentId];
                 items[currentIndex] = currentItem;
@@ -153,7 +153,6 @@ contract NFTMarketplace is ERC721URIStorage {
         MarketItem[] memory items = new MarketItem[](itemCount);
         for (uint i = 0; i < totalItemCount; i++) {
             if (idToMarketItem[i + 1].owner == msg.sender) {
-                // uint currentId = i + 1;
                 uint currentId = idToMarketItem[i + 1].tokenId;
                 MarketItem storage currentItem = idToMarketItem[currentId];
                 items[currentIndex] = currentItem;
