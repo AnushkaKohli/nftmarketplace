@@ -50,6 +50,41 @@ describe("NFT Marketplace", function() {
 
             expect(ownerAddress).to.equal(nftMarketAddress);
             expect(mintedTokenURI).to.equal(tokenURI);
-        })
+        });
+
+        it("Should emit MarketItemCreated event after successful minting and listing", async() => {
+            const transaction = await nftMarket.createToken(tokenURI, auctionPrice, { value: listingPrice });
+            const receipt = await transaction.wait();
+            const tokenID = receipt.logs[0].args.tokenId;
+            await expect(transaction).to.emit(nftMarket, "MarketItemCreated").withArgs(tokenID, contractOwner.address, nftMarketAddress, auctionPrice, false);
+            // emit MarketItemCreated(
+            //     tokenId,
+            //     msg.sender, //seller
+            //     address(this), //owner
+            //     price,
+            //     false
+            // );
+        });
+    });
+
+    describe("Execute sale of a listed NFT token", () => {
+        const tokenURI = "https://www.mytoken.com";
+
+        it("Should revert if buyer sends less or more than auction price", async() => {
+            const newNftTokenId = await mintAndListNFT(tokenURI, auctionPrice);
+            await expect(nftMarket.connect(buyerAddress).createMarketSale(newNftTokenId, { value: 20})).to.be.revertedWith("Please submit the asking price of NFT in order to complete the purchase");
+        });
+
+        it("Buy a new token and check token address", async() => {
+            const newNftTokenId = await mintAndListNFT(tokenURI, auctionPrice);
+
+            const oldOwnerAddress = await nftMarket.ownerOf(newNftTokenId);
+            //Here, oldOwnerAddress is the address of the contract itself (marketplace address)
+            expect(oldOwnerAddress).to.equal(nftMarketAddress);
+
+            await nftMarket.connect(buyerAddress).createMarketSale(newNftTokenId, { value: auctionPrice });
+            const newOwnerAddress = await nftMarket.ownerOf(newNftTokenId);
+            expect(newOwnerAddress).to.equal(buyerAddress.address);
+        });
     })
 })

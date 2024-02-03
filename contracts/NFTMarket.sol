@@ -59,7 +59,7 @@ contract NFTMarketplace is ERC721URIStorage {
         idToMarketItem[tokenId] = MarketItem(
             tokenId,
             payable(msg.sender), // seller
-            payable(address(this)), // owner
+            payable(address(this)), // owner - initially the owner is the marketplace contract address
             price,
             false
         );
@@ -84,7 +84,7 @@ contract NFTMarketplace is ERC721URIStorage {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
 
-        // mint the token tokenId to msg.sender - _mint function comes from openzeppelin library (ERC721 contract)
+        // mint the token newTokenId to msg.sender - _mint function comes from openzeppelin library (ERC721 contract)
         // first the token is minted to the msg.sender and then it is transferred to the marketplace (this smart contract). That is how the token is listed in the marketplace
         _mint(msg.sender, newTokenId);
         _setTokenURI(newTokenId, tokenURI);
