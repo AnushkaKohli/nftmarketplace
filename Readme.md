@@ -40,3 +40,18 @@ Modify *NFTMarket.sol*
 Step 7:
 Create the test file.
 Run test using `npx hardhat test`
+
+## Note
+
+1. Use `const auctionPrice = ethers.parseUnits('100', 'ether');`
+
+    instead of `const auctionPrice = ethers.utils.parseUnits('100', 'ether');`
+2. Use `await nftMarket.getDeployedCode();`
+
+    instead of `await nftMarket.deployed();`
+3. Use `nftMarketAddress = nftMarket.target;`
+
+    instead of `nftMarketAddress = nftMarket.address;`
+4. Use `const tokenID = receipt.logs[0].args.tokenId;`
+
+    instead of `const tokenID = receipt.events[0].args.tokenId;`
