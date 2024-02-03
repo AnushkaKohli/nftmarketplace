@@ -68,8 +68,8 @@ contract NFTMarketplace is ERC721URIStorage {
         _transfer(msg.sender, address(this), tokenId); // transfer the token from msg.sender to the marketplace (this smart contract)
         emit MarketItemCreated(
             tokenId,
-            msg.sender,
-            address(this),
+            msg.sender, // seller
+            address(this), // owner
             price,
             false
         );
@@ -208,7 +208,7 @@ contract NFTMarketplace is ERC721URIStorage {
     function cancelItemListing(uint tokenId) public {
         require(
             idToMarketItem[tokenId].seller == msg.sender,
-            "You are not the seller of this token, so you cannot cancel the sale"
+            "You are not the seller of this token, so you cannot cancel the listing"
         );
         require(
             idToMarketItem[tokenId].sold == false,

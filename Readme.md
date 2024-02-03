@@ -55,3 +55,4 @@ Run test using `npx hardhat test`
 4. Use `const tokenID = receipt.logs[0].args.tokenId;`
 
     instead of `const tokenID = receipt.events[0].args.tokenId;`
+5. Hardhat uses Mocha testing framework for uint testing.

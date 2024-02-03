@@ -164,4 +164,28 @@ describe("NFT Marketplace", function() {
             expect(ownerListings.length).to.equal(2);
         })
     });
+
+    describe("Cancel a marketplace listing", () => {
+        it("Should revert if seller is not cancelling the listing", async() => {
+            const newNftTokenId = await mintAndListNFT(tokenURI, auctionPrice);
+            await nftMarket.connect(buyerAddress).createToken(newNftTokenId, auctionPrice, { value: listingPrice });
+            await expect(nftMarket.connect(buyerAddress).cancelItemListing(newNftTokenId)).to.be.revertedWith("You are not the seller of this token, so you cannot cancel the listing");
+        });
+
+        it("Should cancel and return the correct number of listings", async() => {
+            const newNftTokenId = await mintAndListNFT(tokenURI, auctionPrice);
+
+            // seler - buyerAddress
+            // owner - nftMarketAddress
+            await nftMarket.connect(buyerAddress).createToken(newNftTokenId, auctionPrice, { value: listingPrice });
+            await nftMarket.connect(buyerAddress).createToken(newNftTokenId, auctionPrice, { value: listingPrice });
+
+            let unsoldItems = await nftMarket.fetchMarketItems();
+            await expect(unsoldItems.length).to.equal(3);
+
+            await nftMarket.cancelItemListing(newNftTokenId);
+            let newUnsoldItems = await nftMarket.fetchMarketItems();
+            await expect(newUnsoldItems.length).to.equal(2);
+        });
+    });
 });
