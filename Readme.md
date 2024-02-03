@@ -39,7 +39,13 @@ Modify *NFTMarket.sol*
 
 Step 7:
 Create the test file.
+
 Run test using `npx hardhat test`
+
+Step 8:
+Add the deployment script.
+
+Run the deployment script using `npx hardhat run scripts/deploy.js --network sepolia`
 
 ## Note
 
