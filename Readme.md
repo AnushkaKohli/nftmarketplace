@@ -10,7 +10,7 @@ Step 3:
 `npx hardhat init`
 
 Step 4:
-Go to *hardhat.config.js* file and add the following to add the network:
+Go to `hardhat.config.js` file and add the following to add the network:
 
 ```js
 module.exports = {
@@ -35,7 +35,7 @@ b) Add openzeppelin library which is a library of modular, reusable, secure smar
 `npm i openzeppelin/contracts`
 
 Step 6:
-Modify *NFTMarket.sol*
+Modify `NFTMarket.sol`
 
 Step 7:
 Create the test file.
@@ -62,3 +62,19 @@ Run the deployment script using `npx hardhat run scripts/deploy.js --network sep
 
     instead of `const tokenID = receipt.events[0].args.tokenId;`
 5. Hardhat uses Mocha testing framework for uint testing.
+
+## Steps for creating frontend in next.js
+
+1. Create a nextjs project : `npx create-next-app@latest client`
+2. Copy the ABI from `artifacts/contracts/NFTMarket.sol/NFTMarketplace.json` to `client/abi/NFTMarketplace.json`.
+3. Create `config.js` inside the client folder. Edit it by creating a new `.env` file inside `client` folder and by installing the `dotenv` dependency inside `client`.
+4. Setup tailwindcss (optional)
+5. Install few more dependencies :
+
+    `npm i web3modal axios`
+
+    web3modal - allows to connect your app to many walllet providers such as metamask, coinbase and wallet connect.
+
+    axios - makes it easy to run asynchronous http request. Used to fetch data to the pinnata api
+
+6. Run the application using `npm run dev`
