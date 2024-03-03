@@ -71,7 +71,10 @@ Run the deployment script using `npx hardhat run scripts/deploy.js --network sep
 4. Setup tailwindcss (optional)
 5. Install few more dependencies :
 
-    `npm i web3modal axios`
+    ```sh
+    cd .\client\
+    npm i web3modal axios ethers
+    ```
 
     web3modal - allows to connect your app to many walllet providers such as metamask, coinbase and wallet connect.
 
