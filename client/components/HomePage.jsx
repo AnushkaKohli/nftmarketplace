@@ -48,17 +48,19 @@ const HomePage = () => {
     const nftContract = getContract();
     console.log(nftContract);
     // Fetch all the unsold items from the marketplace
-    const data = await nftContract.methods.fetchItemsListed().call();
+    const data = await nftContract.methods.fetchMarketItems().call();
     console.log(data);
     const items = await Promise.all(
       data.map(async (i) => {
         const tokenUri = await nftContract.methods.tokenURI(i.tokenId).call();
+        console.log("Token URI: ", tokenUri);
         const meta = await axios.get(tokenUri);
+        console.log("Meta: ", meta);
         let price = ethers.formatUnits(i.price.toString(), "ether");
 
         let item = {
           price: price,
-          tokenId: i.tokenId.toNumber(),
+          tokenId: parseInt(i.tokenId),
           seller: i.seller,
           owner: i.owner,
           image: meta.data.image,
@@ -119,7 +121,7 @@ const HomePage = () => {
               <div key={i} className="border shadow rounded-xl overflow-hidden">
                 <Image
                   src={nft.image}
-                  alt={nft.name}
+                  alt={nft.name || "NFT Image"}
                   width={300}
                   height="auto"
                   placeholder="blur"

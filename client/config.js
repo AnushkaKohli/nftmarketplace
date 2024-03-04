@@ -7,5 +7,5 @@ export const NETWORK = process.env.NETWORK;
 export const INFURA_KEY = process.env.INFURA_KEY;
 export const PINATA_API_KEY = process.env.PINATA_API_KEY;
 export const PINATA_API_SECRET = process.env.PINATA_API_SECRET;
-export const PINATA_JWT = process.env.PINATA_JWT;
+export const NEXT_PUBLIC_PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
 export const NEXT_PUBLIC_GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL;

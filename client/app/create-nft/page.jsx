@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 const ethers = require("ethers");
 import Web3 from "web3";
 import axios from "axios";
-import { NEXT_PUBLIC_GATEWAY_URL } from "@/config";
+import { NEXT_PUBLIC_GATEWAY_URL, NEXT_PUBLIC_PINATA_JWT } from "@/config";
 import { address, ABI } from "@/abi/NFTMarketplace";
 import Navigation from "@/components/Navigation";
 
@@ -30,14 +30,6 @@ const page = () => {
       setUploading(true);
       const data = new FormData();
       data.set("file", fileToUpload);
-      // console.log("File to upload", fileToUpload);
-      setLoading(true);
-      const { name, description, price } = formInput;
-      if (!name || !description || !price) return;
-      // console.log("name, description, price", name, description, price);
-      data.set("name", name);
-      data.set("description", description);
-      data.set("price", price);
       const response = await axios("/api/files", {
         method: "POST",
         data: data,
@@ -47,7 +39,6 @@ const page = () => {
       setUploading(false);
       const imageUrl = `${NEXT_PUBLIC_GATEWAY_URL}/${response.data.IpfsHash}`;
       setFileUrl(imageUrl);
-      setLoading(false);
       return imageUrl;
     } catch (error) {
       console.log("Error uploading file", error);
@@ -62,17 +53,17 @@ const page = () => {
     uploadFile(file);
   };
 
-  // let provider = typeof window !== "undefined" && window.ethereum;
-  let provider = new ethers.BrowserProvider(window.ethereum);
+  let provider2 = typeof window !== "undefined" && window.ethereum;
+  let provider = new ethers.BrowserProvider(provider2);
   async function connect() {
     try {
       if (!provider) return alert("Please Install MetaMask");
 
-      const accounts = await window.ethereum.request({
+      const accounts = await provider2.request({
         method: "eth_requestAccounts",
       });
 
-      let chainIdHex = await window.ethereum.request({ method: "eth_chainId" });
+      let chainIdHex = await provider2.request({ method: "eth_chainId" });
       let chainIdInt = parseInt(chainIdHex, 16);
       localStorage.setItem("chainId", chainIdInt);
 
@@ -84,13 +75,51 @@ const page = () => {
     }
   }
 
-  // const getContract = (signer) => {
-  //   const web3 = new Web3(provider);
-  //   return new web3.eth.Contract(ABI, address, signer);
-  // };
+  async function uploadMetadata() {
+    try {
+      console.log("Form Input: ", formInput);
+      const { name, description, price } = formInput;
+      if (!name || !description || !price) {
+        alert("Please fill out all the fields");
+        return;
+      }
+      setLoading(true);
+      const jsonData = {
+        pinataMetadata: {
+          name: `${name}.json`,
+        },
+        pinataContent: {
+          name: name,
+          description: description,
+          image: fileUrl,
+          price: price,
+        },
+      };
+      console.log("Json Data: ", jsonData);
+      console.log("Pinata JWT: ", NEXT_PUBLIC_PINATA_JWT);
+      console.log("NEXT_PUBLIC_GATEWAY_URL: ", NEXT_PUBLIC_GATEWAY_URL);
+      const jsonResponse = await axios(
+        "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${NEXT_PUBLIC_PINATA_JWT}`,
+          },
+          data: jsonData,
+        }
+      );
+      console.log("Response: ", jsonResponse);
+      const tokenUri = `${NEXT_PUBLIC_GATEWAY_URL}/${jsonResponse.data.IpfsHash}`;
+      setLoading(false);
+      return tokenUri;
+    } catch (error) {
+      console.log("Error uploading metadata", error.message);
+    }
+  }
 
   async function listNFTForSale() {
-    const url = fileUrl;
+    const url = await uploadMetadata();
     connect();
     console.log("Provider: ", provider);
     const sepoliaChainId = 11155111;
@@ -178,7 +207,6 @@ const page = () => {
           >
             {uploading ? "Uploading..." : ""}
           </button>
-
           {cid && (
             <button
               onClick={listNFTForSale}
