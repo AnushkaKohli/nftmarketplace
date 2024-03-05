@@ -45,6 +45,7 @@ const page = () => {
     const web3 = new Web3(provider2);
     return new web3.eth.Contract(ABI, address);
   };
+
   const loadDashboardNFTs = async () => {
     try {
       setLoading(true);
