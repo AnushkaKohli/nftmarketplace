@@ -81,3 +81,32 @@ Run the deployment script using `npx hardhat run scripts/deploy.js --network sep
     axios - makes it easy to run asynchronous http request. Used to fetch data to the pinnata api
 
 6. Run the application using `npm run dev`
+
+## Note in frontend:-
+
+1. We know there are two types of functions in solidity, one that doesn't change the state(or read-only functions) and others that do change the state of the contract.
+
+    ```js
+    // This doesn't change the state - Read only functions
+    function getBikes() public view returns (Bike[] memory){
+        return bikes;
+    }
+
+    // This do change the state
+    function changeAvailability() public {
+        bikes[1].isAvailable=false;
+    }
+    ```
+
+    >For the read-only functions, we need to use the provider.
+
+    ```js
+    const contract = new ethers.Contract(contractAddress, ABI, provider);
+    ````
+    >
+    >For state-changing transactions or functions we need to use the signer.
+
+    ```js
+    const signer = await provider.getSigner()
+    const contract = new ethers.Contract(contractAddress, ABI, signer)
+    ```

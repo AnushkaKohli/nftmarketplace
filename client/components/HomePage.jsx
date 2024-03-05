@@ -77,10 +77,6 @@ const HomePage = () => {
   };
 
   async function buyNft(nft) {
-    // const web3Modal = new Web3Modal();
-    // const connection = await web3Modal.connect();
-    // const provider = new ethers.providers.Web3Provider(connection);
-    // const getNetwork = await provider.getNetwork();
     connect();
     const sepoliaChainId = 11155111;
     let chainIdInt = parseInt(JSON.parse(localStorage.getItem("chainId")));
@@ -91,7 +87,6 @@ const HomePage = () => {
 
     // Sign the transaction
     const signer = provider.getSigner();
-    // const contract = getContract();
     const contract = new ethers.Contract(address, ABI, signer);
     const price = ethers.formatUnits(nft.price.toString(), "ether");
     const transaction = await contract.createMarketSale(nft.tokenId, {
@@ -116,12 +111,15 @@ const HomePage = () => {
   return (
     <div className="flex justify-center">
       <div className="px-4" style={{ maxWidth: "1600px" }}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {nfts.map((nft, i) => {
             return (
-              <div key={i} className="border shadow rounded-xl overflow-hidden">
+              <div
+                key={i}
+                className="border shadow rounded-xl overflow-hidden mx-3 my-7"
+              >
                 <Image
-                  src={nft.image}
+                  src={nft.image ? nft.image : "/placeholder.jpg"}
                   alt={nft.name || "NFT Image"}
                   width={300}
                   height={200}
@@ -131,13 +129,15 @@ const HomePage = () => {
                 />
                 <div className="p-4">
                   <p
-                    style={{ height: "64px" }}
+                    style={{ height: "5vw" }}
                     className="text-2xl font-semibold"
                   >
-                    {nft.name}
+                    {nft.name || "NFT Name"}
                   </p>
                   <div style={{ height: "70px", overflow: "hidden" }}>
-                    <p className="text-gray-400">{nft.description}</p>
+                    <p className="text-gray-400">
+                      {nft.description || "NFT Description"}
+                    </p>
                   </div>
                 </div>
                 <div className="p-4 bg-black">

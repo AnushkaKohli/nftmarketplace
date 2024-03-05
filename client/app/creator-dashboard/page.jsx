@@ -5,8 +5,10 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 const ethers = require("ethers");
 import axios from "axios";
+import Web3 from "web3";
 import { address, ABI } from "@/abi/NFTMarketplace";
 import Navigation from "@/components/Navigation";
+
 const page = () => {
   const [nfts, setNfts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -14,7 +16,7 @@ const page = () => {
 
   useEffect(() => {
     connect();
-    loadMyNFTs();
+    loadDashboardNFTs();
   }, []);
 
   let provider2 = typeof window !== "undefined" && window.ethereum;
@@ -38,8 +40,54 @@ const page = () => {
       console.error(error);
     }
   }
-  const loadMyNFTs = async () => {
+
+  const getContract = () => {
+    const web3 = new Web3(provider2);
+    return new web3.eth.Contract(ABI, address);
+  };
+  const loadDashboardNFTs = async () => {
     try {
+      setLoading(true);
+      const nftContract = getContract();
+
+      // Fetch all the unsold items from the marketplace
+      const data = await nftContract.methods.fetchItemsListed().call();
+
+      //   connect();
+      //   // Sign the transaction
+      //   const contract = new ethers.Contract(address, ABI, provider);
+      //   const data = await contract.fetchMarketItems();
+      console.log("Data: ", data);
+
+      const items = await Promise.all(
+        data.map(async (i) => {
+          const tokenUri = await nftContract.methods.tokenURI(i.tokenId).call();
+          const meta = await axios.get(tokenUri);
+          let price = ethers.formatUnits(i.price.toString(), "ether");
+
+          let item = {
+            price: price,
+            tokenId: parseInt(i.tokenId),
+            seller: i.seller,
+            owner: i.owner,
+            image: meta.data.image,
+            name: meta.data.name,
+            tokenUri,
+          };
+
+          return item;
+        })
+      );
+      setNfts(items);
+      setLoading(false);
+    } catch (error) {
+      console.log("Error loading my NFTs: ", error.message);
+    }
+  };
+
+  const cancelListing = async (tokenId) => {
+    try {
+      setLoading(true);
       connect();
       const sepoliaChainId = 11155111;
       let chainIdInt = parseInt(JSON.parse(localStorage.getItem("chainId")));
@@ -49,53 +97,14 @@ const page = () => {
       }
 
       // Sign the transaction
-      setLoading(true);
-      const contract = new ethers.Contract(address, ABI, provider);
-      const data = await contract.fetchMyNFTs();
-      const items = await Promise.all(
-        data.map(async (i) => {
-          console.log("i: ", i);
-          const tokenUri = await contract.tokenURI(i.tokenId);
-          const meta = await axios.get(tokenUri);
-          let price = ethers.formatUnits(i.price.toString(), "ether");
-          let item = {
-            price,
-            tokenId: i.tokenId.toNumber(),
-            seller: i.seller,
-            owner: i.owner,
-            image: meta.data.image,
-            name: meta.data.name,
-            tokenUri,
-          };
-          return item;
-        })
-      );
-
-      setNfts(items);
-      setLoading(false);
-    } catch (error) {
-      console.log("Error loading my NFTs", error.message);
-    }
-  };
-
-  const resellNft = async (tokenId, tokenPrice) => {
-    try {
-      setLoading(true);
-      connect();
-
-      // Sign the transaction
       const signer = provider.getSigner();
       const contract = new ethers.Contract(address, ABI, signer);
-      const price = ethers.formatUnits(tokenPrice.toString(), "ether");
-      let listingPrice = await contract.getListingPrice();
-      listingPrice = listingPrice.toString();
-      const transaction = await contract.resellToken(tokenId, price, {
-        value: listingPrice,
-      });
+      const transaction = await contract.cancelItemListing(tokenId);
       await transaction.wait();
-      loadMyNFTs();
+      loadDashboardNFTs();
+      setLoading(false);
     } catch (error) {
-      console.log("Error reselling NFT", error.message);
+      console.log("Error canceling listing", error.message);
     }
   };
 
@@ -110,7 +119,7 @@ const page = () => {
     return (
       <div>
         <Navigation />
-        <p className="text-3xl px-20 py-10">No NFTs is owned by you</p>
+        <p className="text-3xl px-20 py-10">No NFTs is listed by you</p>
       </div>
     );
   return (
@@ -118,15 +127,15 @@ const page = () => {
       <Navigation />
       <div className="flex justify-center">
         <div className="px-4" style={{ maxWidth: "1600px" }}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {nfts.map((nft, i) => {
               return (
                 <div
                   key={i}
-                  className="border shadow rounded-xl overflow-hidden m-5"
+                  className="border shadow rounded-xl overflow-hidden mx-3 my-7"
                 >
                   <Image
-                    src={nft.image}
+                    src={nft.image ? nft.image : "/placeholder.jpg"}
                     alt={nft.name || "NFT Image"}
                     width={400}
                     height={300}
@@ -136,10 +145,10 @@ const page = () => {
                   />
                   <div className="p-4">
                     <p
-                      style={{ height: "64px" }}
+                      style={{ height: "5vw" }}
                       className="text-2xl font-semibold"
                     >
-                      {nft.name}
+                      {nft.name || "NFT Name"}
                     </p>
                   </div>
                   <div className="p-4 bg-black">
@@ -148,9 +157,9 @@ const page = () => {
                     </p>
                     <button
                       className="w-full bg-pink-500 text-white font-bold py-2 px-12 rounded"
-                      onClick={() => resellNft(nft.tokenId, nft.price)}
+                      onClick={() => cancelListing(nft.tokenId)}
                     >
-                      Resell NFT
+                      Cancel listing
                     </button>
                   </div>
                 </div>
