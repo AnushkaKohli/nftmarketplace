@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 const ethers = require("ethers");
-import Web3 from "web3";
 import axios from "axios";
 import { NEXT_PUBLIC_GATEWAY_URL, NEXT_PUBLIC_PINATA_JWT } from "@/config";
 import { address, ABI } from "@/abi/NFTMarketplace";
@@ -13,7 +12,6 @@ import Navigation from "@/components/Navigation";
 const page = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [file, setFile] = useState(null);
   const [fileUrl, setFileUrl] = useState(null);
   const [cid, setCid] = useState("");
   const [formInput, updateFormInput] = useState({
@@ -22,7 +20,6 @@ const page = () => {
     description: "",
   });
   const [walletAddress, setWalletAddress] = useState("");
-  const [chainId, setChainId] = useState();
   const inputFileRef = useRef(null);
   const router = useRouter();
   const uploadFile = async (fileToUpload) => {
@@ -34,7 +31,6 @@ const page = () => {
         method: "POST",
         data: data,
       });
-      console.log("Response: ", response);
       setCid(response.data.IpfsHash);
       setUploading(false);
       const imageUrl = `${NEXT_PUBLIC_GATEWAY_URL}/${response.data.IpfsHash}`;
@@ -49,7 +45,6 @@ const page = () => {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    setFile(file);
     uploadFile(file);
   };
 
@@ -77,7 +72,6 @@ const page = () => {
 
   async function uploadMetadata() {
     try {
-      console.log("Form Input: ", formInput);
       const { name, description, price } = formInput;
       if (!name || !description || !price) {
         alert("Please fill out all the fields");
@@ -95,9 +89,6 @@ const page = () => {
           price: price,
         },
       };
-      console.log("Json Data: ", jsonData);
-      console.log("Pinata JWT: ", NEXT_PUBLIC_PINATA_JWT);
-      console.log("NEXT_PUBLIC_GATEWAY_URL: ", NEXT_PUBLIC_GATEWAY_URL);
       const jsonResponse = await axios(
         "https://api.pinata.cloud/pinning/pinJSONToIPFS",
         {
@@ -109,7 +100,6 @@ const page = () => {
           data: jsonData,
         }
       );
-      console.log("Response: ", jsonResponse);
       const tokenUri = `${NEXT_PUBLIC_GATEWAY_URL}/${jsonResponse.data.IpfsHash}`;
       setLoading(false);
       return tokenUri;
@@ -119,31 +109,30 @@ const page = () => {
   }
 
   async function listNFTForSale() {
-    const url = await uploadMetadata();
-    connect();
-    console.log("Provider: ", provider);
-    const sepoliaChainId = 11155111;
-    let chainIdInt = parseInt(JSON.parse(localStorage.getItem("chainId")));
-    if (chainIdInt !== parseInt(sepoliaChainId)) {
-      alert("Please connect to Sepolia Network");
-      return;
-    }
+    try {
+      const url = await uploadMetadata();
+      connect();
+      const sepoliaChainId = 11155111;
+      let chainIdInt = parseInt(JSON.parse(localStorage.getItem("chainId")));
+      if (chainIdInt !== parseInt(sepoliaChainId)) {
+        alert("Please connect to Sepolia Network");
+        return;
+      }
 
-    // Sign the transaction
-    const signer = await provider.getSigner();
-    console.log("Signer: ", signer);
-    const contract = new ethers.Contract(address, ABI, signer);
-    console.log("Contract: ", contract);
-    // const contract = getContract(signer);
-    const price = ethers.parseUnits(formInput.price, "ether");
-    let listingPrice = await contract.getListingPrice();
-    listingPrice = listingPrice.toString();
-    console.log("Listing Price: ", listingPrice);
-    const transaction = await contract.createToken(url, price, {
-      value: listingPrice,
-    });
-    await transaction.wait();
-    router.push("/");
+      // Sign the transaction
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(address, ABI, signer);
+      const price = ethers.parseUnits(formInput.price, "ether");
+      let listingPrice = await contract.getListingPrice();
+      listingPrice = listingPrice.toString();
+      const transaction = await contract.createToken(url, price, {
+        value: listingPrice,
+      });
+      await transaction.wait();
+      router.push("/");
+    } catch (error) {
+      console.log("Error listing NFT for sale", error.message);
+    }
   }
   return (
     <div>

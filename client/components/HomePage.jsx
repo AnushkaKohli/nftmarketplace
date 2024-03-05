@@ -5,7 +5,6 @@ import React, { useState, useEffect } from "react";
 const ethers = require("ethers");
 import axios from "axios";
 import Web3 from "web3";
-import Web3Modal from "web3modal";
 import { ABI, address } from "@/abi/NFTMarketplace";
 
 const HomePage = () => {
@@ -14,20 +13,25 @@ const HomePage = () => {
   const [loading, setLoading] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
 
-  let provider = typeof window !== "undefined" && window.ethereum;
-
   useEffect(() => {
     connect();
     loadNFTs();
   }, []);
 
+  let provider2 = typeof window !== "undefined" && window.ethereum;
+  let provider = new ethers.BrowserProvider(provider2);
+
   async function connect() {
     try {
       if (!provider) return alert("Please Install MetaMask");
 
-      const accounts = await provider.request({
+      const accounts = await provider2.request({
         method: "eth_requestAccounts",
       });
+
+      let chainIdHex = await provider2.request({ method: "eth_chainId" });
+      let chainIdInt = parseInt(chainIdHex, 16);
+      localStorage.setItem("chainId", chainIdInt);
 
       if (accounts.length) {
         setWalletAddress(accounts[0]);
@@ -38,24 +42,21 @@ const HomePage = () => {
   }
 
   const getContract = () => {
-    const web3 = new Web3(provider);
+    const web3 = new Web3(provider2);
     return new web3.eth.Contract(ABI, address);
   };
 
   const loadNFTs = async () => {
     setLoading(true);
-
     const nftContract = getContract();
-    console.log(nftContract);
+
     // Fetch all the unsold items from the marketplace
     const data = await nftContract.methods.fetchMarketItems().call();
-    console.log(data);
+
     const items = await Promise.all(
       data.map(async (i) => {
         const tokenUri = await nftContract.methods.tokenURI(i.tokenId).call();
-        console.log("Token URI: ", tokenUri);
         const meta = await axios.get(tokenUri);
-        console.log("Meta: ", meta);
         let price = ethers.formatUnits(i.price.toString(), "ether");
 
         let item = {
@@ -71,19 +72,19 @@ const HomePage = () => {
         return item;
       })
     );
-    console.log("Items: ", items);
-
     setNfts(items);
     setLoading(false);
   };
 
   async function buyNft(nft) {
-    const web3Modal = new Web3Modal();
-    const connection = await web3Modal.connect();
-    const provider = new ethers.providers.Web3Provider(connection);
-    const getNetwork = await provider.getNetwork();
+    // const web3Modal = new Web3Modal();
+    // const connection = await web3Modal.connect();
+    // const provider = new ethers.providers.Web3Provider(connection);
+    // const getNetwork = await provider.getNetwork();
+    connect();
     const sepoliaChainId = 11155111;
-    if (getNetwork.chainId !== sepoliaChainId) {
+    let chainIdInt = parseInt(JSON.parse(localStorage.getItem("chainId")));
+    if (chainIdInt !== sepoliaChainId) {
       alert("Please connect to Sepolia Network");
       return;
     }
@@ -123,7 +124,7 @@ const HomePage = () => {
                   src={nft.image}
                   alt={nft.name || "NFT Image"}
                   width={300}
-                  height="auto"
+                  height={200}
                   placeholder="blur"
                   blurDataURL="/placeholder.jpg"
                   layout="responsive"
@@ -147,7 +148,7 @@ const HomePage = () => {
                     className="w-full bg-pink-500 text-white font-bold py-2 px-12 rounded"
                     onClick={() => buyNft(nft)}
                   >
-                    Buy /now
+                    Buy now
                   </button>
                 </div>
               </div>
